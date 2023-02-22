@@ -7,3 +7,6 @@
 [submodule "test/.bats/bats-assert"]
 	path = test/.bats/bats-assert
 	url = https://github.com/bats-core/bats-assert.git
+[submodule "test/.bats/bats-file"]
+	path = test/.bats/bats-file
+	url = https://github.com/bats-core/bats-file.git
