@@ -1,0 +1,142 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: buildpacks
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/version: {{ .Chart.Version }}
+  annotations:
+{{- toYaml .Values.annotations | nindent 4 }}
+spec:
+  description: {{ .Chart.Description }}
+
+  workspaces:
+    - name: source
+      description: Directory where application source is located.
+    - name: cache
+      description: Directory where cache is stored (when no cache image is provided).
+      optional: true
+    - name: dockerconfig
+      description: >-
+        An optional workspace that allows providing a .docker/config.json file
+        for Buildpacks lifecycle binary to access the container registry.
+        The file should be placed at the root of the Workspace with name config.json.
+      optional: true
+
+  params:
+    - name: APP_IMAGE
+      description: The name of where to store the app image.
+    - name: BUILDER_IMAGE
+      description: The image on which builds will run (must include lifecycle and compatible buildpacks).
+      default: "{{ .Values.images.builder }}"
+    - name: SOURCE_SUBPATH
+      description: A subpath within the `source` input where the source to build is located.
+      default: ""
+    - name: ENV_VARS
+      type: array
+      description: Environment variables to set during _build-time_.
+      default: []
+    - name: PROCESS_TYPE
+      description: The default process type to set on the image.
+      default: "web"
+    - name: RUN_IMAGE
+      description: Reference to a run image to use.
+      default: ""
+    - name: CACHE_IMAGE
+      description: The name of the persistent app cache image (if no cache workspace is provided).
+      default: ""
+    - name: SKIP_RESTORE
+      description: Do not write layer metadata or restore cached layers.
+      default: "false"
+    - name: USER_ID
+      description: The user ID of the builder image user.
+      default: "{{ .Values.securityContext.runAsUser }}"
+    - name: GROUP_ID
+      description: The group ID of the builder image user.
+      default: "{{ .Values.securityContext.runAsGroup }}"
+    - name: PLATFORM_DIR
+      description: The name of the platform directory.
+      default: empty-dir
+
+  results:
+    - name: APP_IMAGE_DIGEST
+      description: The digest of the built `APP_IMAGE`.
+    - name: APP_IMAGE_URL
+      description: The URL of the built `APP_IMAGE`.
+
+  volumes:
+    - name: scripts-dir
+      emptyDir: {}
+    - name: empty-dir
+      emptyDir: {}
+    - name: layers-dir
+      emptyDir: {}
+
+  stepTemplate:
+    env:
+      - name: CNB_PLATFORM_API
+        value: "0.11"
+
+  steps:
+    # load all the shell scripts into the "/script" directory, a simple file creation followed by
+    # adding execution permission
+    - name: load-scripts
+      image: {{ .Values.images.bash }}
+      workingDir: /scripts
+      script: |
+{{- range $path, $content := .Files.Glob  "scripts/*.sh" }}
+  {{- $name := trimPrefix "scripts/" $path }}
+        printf '%s' "{{ $content | toString | b64enc }}" |base64 -d >{{ $name }}
+        chmod +x "{{ $name }}"
+{{- end }}
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+
+    - name: prepare
+      image: {{ .Values.images.bash }}
+      args:
+        - "--env-vars"
+        - "$(params.ENV_VARS[*])"
+      workingDir: /scripts
+      env:
+{{- include "environment-variables" . | nindent 8 }}
+      script: |
+         ./prepare.sh
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+        - name: layers-dir
+          mountPath: /layers
+        - name: $(params.PLATFORM_DIR)
+          mountPath: /platform
+
+    - name: create
+      image: $(params.BUILDER_IMAGE)
+      imagePullPolicy: Always
+      command:
+        - /cnb/lifecycle/creator
+      args:
+        - "-app=$(workspaces.source.path)/$(params.SOURCE_SUBPATH)"
+        - "-cache-dir=$(workspaces.cache.path)"
+        - "-cache-image=$(params.CACHE_IMAGE)"
+        - "-uid=$(params.USER_ID)"
+        - "-gid=$(params.GROUP_ID)"
+        - "-layers=/layers"
+        - "-log-level=debug"
+        - "-no-color"
+        - "-platform=/platform"
+        - "-report=/layers/report.toml"
+        - "-process-type=$(params.PROCESS_TYPE)"
+        - "-skip-restore=$(params.SKIP_RESTORE)"
+        - "-previous-image=$(params.APP_IMAGE)"
+        - "-run-image=$(params.RUN_IMAGE)"
+        - "$(params.APP_IMAGE)"
+      volumeMounts:
+        - name: layers-dir
+          mountPath: /layers
+        - name: $(params.PLATFORM_DIR)
+          mountPath: /platform
+      securityContext:
+{{- .Values.securityContext | toYaml | nindent 8 }}

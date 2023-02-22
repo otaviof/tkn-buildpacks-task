@@ -1,0 +1,6 @@
+---
+apiVersion: v2
+name: tkn-buildpacks-task
+description: Tekton Buildpacks Task
+version: 0.0.1
+type: application
