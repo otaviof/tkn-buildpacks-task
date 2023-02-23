@@ -17,12 +17,6 @@ spec:
     - name: cache
       description: Directory where cache is stored (when no cache image is provided).
       optional: true
-    - name: dockerconfig
-      description: >-
-        An optional workspace that allows providing a .docker/config.json file
-        for Buildpacks lifecycle binary to access the container registry.
-        The file should be placed at the root of the Workspace with name config.json.
-      optional: true
 
   params:
     - name: APP_IMAGE
@@ -94,16 +88,18 @@ spec:
         - name: scripts-dir
           mountPath: /scripts
 
+    # prepare the filesytem and extra settings in order to perform the CNB builder as the next step,
+    # extra enviroment variables are stored on the /platform/env following buildpacks convention
     - name: prepare
       image: {{ .Values.images.bash }}
       args:
         - "--env-vars"
         - "$(params.ENV_VARS[*])"
-      workingDir: /scripts
+      # the enviroment variables required by the script are based on template
       env:
 {{- include "environment-variables" . | nindent 8 }}
-      script: |
-         ./prepare.sh
+      command:
+        - /scripts/prepare.sh
       volumeMounts:
         - name: scripts-dir
           mountPath: /scripts
@@ -112,6 +108,8 @@ spec:
         - name: $(params.PLATFORM_DIR)
           mountPath: /platform
 
+    # runs the primary entrypoint for the task, invokes the "creator" CNB entrypoint to perform the
+    # whole lifecycle steps in order to build a new container image
     - name: create
       image: $(params.BUILDER_IMAGE)
       imagePullPolicy: Always
