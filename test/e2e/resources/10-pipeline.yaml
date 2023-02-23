@@ -1,0 +1,54 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  labels:
+    name: tkn-buildpacks-e2e
+  name: tkn-buildpacks
+spec:
+  params:
+    - name: git-repo
+      type: string
+      description: Git repository URL
+
+    - name: git-revision
+      type: string
+      default: main
+      description: Git revision, by default "main"
+
+    - name: image-tag
+      type: string
+      description: Fully qualified image name, including tag
+
+  workspaces:
+    - name: source
+    - name: cache
+
+  tasks:
+    - name: git-clone
+      taskRef:
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: source
+      params:
+        - name: url
+          value: $(params.git-repo)
+        - name: revision
+          value: $(params.git-revision)
+        - name: verbose
+          value: "false"
+
+    - name: buildpacks
+      taskRef:
+        name: buildpacks
+      runAfter:
+        - git-clone
+      workspaces:
+        - name: source
+          workspace: source
+        - name: cache
+          workspace: cache
+      params:
+        - name: APP_IMAGE
+          value: $(params.image-tag)

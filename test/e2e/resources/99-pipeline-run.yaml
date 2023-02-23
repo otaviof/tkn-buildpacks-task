@@ -1,0 +1,27 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  labels:
+    name: tkn-buildpacks-e2e
+  name: tkn-buildpacks
+spec:
+  serviceAccountName: pipeline
+  params:
+    - name: git-repo
+      value: https://github.com/otaviof/nodejs-ex.git
+    - name: git-revision
+      value: main
+    - name: image-tag
+      value: ghcr.io/otaviof/nodejs-ex:latest
+  pipelineRef:
+    name: tkn-buildpacks
+  workspaces:
+    - name: source
+      subPath: source
+      persistentVolumeClaim:
+        claimName: workspace-source
+    - name: cache
+      subPath: cache
+      persistentVolumeClaim:
+        claimName: workspace-source
