@@ -17,8 +17,8 @@ source ./test/helper/helper.sh
 	export WORKSPACES_CACHE_BOUND="true"
 	export WORKSPACES_CACHE_PATH="/workspace/cache"
 	export WORKSPACES_SOURCE_PATH="/workspace/source"
-	export PARAMS_USER_ID="${UID}"
-	export PARAMS_GROUP_ID="${UID}"
+	export PARAMS_USER_ID="$(id -u)"
+	export PARAMS_GROUP_ID="$(id -g)"
 
 	# making sure the base-dir is informed, it's the base for the mocked filesystem
 	[ -n "${BASE_DIR}" ]
