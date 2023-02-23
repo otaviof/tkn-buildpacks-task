@@ -19,8 +19,10 @@ jobs:
         with:
           submodules: true
 
+      # installs helm command line
       - uses: azure/setup-helm@v3
 
+      # running integration test target
       - name: test-integration
         run: make test-integration
 
@@ -33,18 +35,20 @@ jobs:
 
       - uses: azure/setup-helm@v3
 
+      # instantiate a KinD (Kubernetes in Docker) cluster, installs `kubectl` and configure the
+      # kubeconfig to reach the local cluster
       - uses: helm/kind-action@v1.5.0
         with:
           cluster_name: kind
           wait: 120s
 
+      # installs Tekton Pipelines and `tkn` command line, including a local Container-Registry with
+      # settings to reach it during testing
       - uses: otaviof/setup-tekton@main
         with:
           tekton_version: v0.41.0
           cli_version: v0.29.1
-          setup_registry: "true"
-          registry_hostname: registry.registry.svc.cluster.local
-          patch_etc_hosts: "true"
 
+      # running end-to-end test target
       - name: test-e2e
         run: make test-e2e
