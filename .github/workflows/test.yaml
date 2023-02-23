@@ -38,7 +38,7 @@ jobs:
           cluster_name: kind
           wait: 120s
 
-      - uses: otaviof/setup-tekton@main
+      - uses: otaviof/setup-tekton@v1
         with:
           tekton_version: v0.41.0
           cli_version: v0.29.1
