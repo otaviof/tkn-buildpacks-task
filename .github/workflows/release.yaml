@@ -1,0 +1,31 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - shell: bash
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+      - uses: azure/setup-helm@v3
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - uses: helm/chart-releaser-action@v1.5.0
+        with:
+          charts_dir: ${{ github.workspace }}
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

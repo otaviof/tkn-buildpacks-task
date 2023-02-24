@@ -12,5 +12,8 @@ test-integration:
 test-e2e:
 	$(BATS_CORE) $(BATS_FLAGS) $(E2E_DIR)/*.bats
 
+# act runs the github actions workflows, so by default only running the test workflow (integration
+# and end-to-end) to avoid running the release workflow accidently
+act: ARGS = --workflows=./.github/workflows/test.yaml
 act:
 	act $(ARGS)

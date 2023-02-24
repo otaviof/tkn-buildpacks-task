@@ -1,8 +1,9 @@
-/.DS_Store
-/.git/
-/.github/
-/.gitignore
-/.idea/
-/.project
-/.vscode/
-/test/
+.DS_Store
+.git/
+.github/
+.gitignore
+.idea/
+.project
+.vscode/
+test/
+test/.bats/
