@@ -43,18 +43,18 @@ source ./test/helper/helper.sh
 		--param="image-tag=registry.registry.svc.cluster.local:32222/otaviof/nodejs-ex:latest" \
 		--workspace="name=source,claimName=workspace-source,subPath=source" \
 		--workspace="name=cache,claimName=workspace-source,subPath=cache" \
-		--showlog
+		--showlog >&3
 	assert_success
 
 	readonly TMPL_FILE="${BASE_DIR}/go-template.tpl"
 
 	# go-template to select the expected condition showing the PipelineRun final status
 	cat >${TMPL_FILE} <<EOS
-{{ range .status.conditions }}
-	{{ if and (eq .type "Succeeded") (eq .status "True") }}
+{{- range .status.conditions -}}
+	{{- if and (eq .type "Succeeded") (eq .status "True") }}
 		{{ .message }}
-	{{ end }}
-{{ end }}
+	{{- end }}
+{{- end -}}
 EOS
 
 	# using template to select the requered information and asserting all tasks have been executed

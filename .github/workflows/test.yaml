@@ -35,8 +35,8 @@ jobs:
 
       - uses: azure/setup-helm@v3
 
-      # instantiate a KinD (Kubernetes in Docker) cluster, installs `kubectl` and configure the
-      # kubeconfig to reach the local cluster
+      # instantiate a KinD (Kubernetes in Docker) cluster, installs `kubectl` and configures the
+      # `kubeconfig` to reach the local cluster
       - uses: helm/kind-action@v1.5.0
         with:
           cluster_name: kind
