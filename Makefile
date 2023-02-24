@@ -4,6 +4,8 @@ BATS_FLAGS ?= --print-output-on-failure --show-output-of-passing-tests --verbose
 INTEGRATION_DIR ?= ./test/integration
 E2E_DIR ?= ./test/e2e
 
+DIR_NAME = $(shell basename $(CURDIR))
+
 ARGS ?=
 
 test-integration:
@@ -11,6 +13,13 @@ test-integration:
 
 test-e2e:
 	$(BATS_CORE) $(BATS_FLAGS) $(E2E_DIR)/*.bats
+
+git-config:
+	./hack/git-config.sh
+
+helm-package:
+	helm package .
+	tar ztvpf $(DIR_NAME)-*.tgz
 
 # act runs the github actions workflows, so by default only running the test workflow (integration
 # and end-to-end) to avoid running the release workflow accidently
