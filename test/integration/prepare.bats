@@ -2,10 +2,12 @@
 
 source ./test/helper/helper.sh
 
+PREPARE_SH="./scripts/prepare.sh"
+
 # when there's no configuration, or the configuration is incomplete, the script must return error,
 # this way we can assert it will run with all required configuration
 @test "[prepare.sh] should fail when the environment is incomplete" {
-	run ./scripts/prepare.sh
+	run ${PREPARE_SH}
 	assert_failure
 	assert_output --partial 'unbound variable'
 }
@@ -33,7 +35,7 @@ source ./test/helper/helper.sh
 
 	# running the prepare script informing a enviroment variables (env-vars) parameter, the script
 	# should run successfuly which means every command executed returns exit-code zero
-	run ./scripts/prepare.sh --env-vars "key=value" "k=v"
+	run ${PREPARE_SH} --env-vars "key=value" "k=v"
 	assert_success
 
 	# making sure the --env-vars argument is working as intended, as in creating a new file with the
