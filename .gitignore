@@ -1,3 +1,4 @@
 /.cr-*
+/.env
 /.vscode/
 /*.tgz
