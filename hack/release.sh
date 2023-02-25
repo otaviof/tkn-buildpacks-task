@@ -63,16 +63,16 @@ cr package
 [[ ! -f "${CHART_TARBALL}" ]] && \
 	fail "'${CHART_TARBALL}' is not found!"
 
-# creating a single file YAML payload with the task, it will be uploaded to the release page, side by
-# side with the chart tarball
-readonly TASK_PAYLOAD_FILE="${CR_RELEASE_PKGS}/${CHART_NAME}-${CHART_TARBALL}.yaml"
-phase "Rendering template on a single resource file ('${TASK_PAYLOAD_FILE}')"
-helm template ${CHART_NAME} . >${TASK_PAYLOAD_FILE}
-
 # showing the contents of the tarball, here it's important to check if there are cluttering that
 # should be added to the `.helmignore`
 phase "Package contents '${CHART_TARBALL}'"
 tar -ztvpf ${CHART_TARBALL}
+
+# creating a single file YAML payload with the task, it will be uploaded to the release page, side by
+# side with the chart tarball
+readonly TASK_PAYLOAD_FILE="${CR_RELEASE_PKGS}/${CHART_NAME}-${CHART_VERSION}.yaml"
+phase "Rendering template on a single Task file ('${TASK_PAYLOAD_FILE}')"
+helm template ${CHART_NAME} . >${TASK_PAYLOAD_FILE}
 
 readonly ACTOR_REPOSITORY="${GITHUB_ACTOR}/${GITHUB_REPOSITORY_NAME}"
 
