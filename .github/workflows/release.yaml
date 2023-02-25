@@ -15,13 +15,8 @@ jobs:
 
       - uses: azure/setup-helm@v3
 
-      - shell: bash
-        run: |
-          make install-chart-releaser
-
-      - shell: bash
+      - uses: otaviof/task-release@main
+        with:
+          repository_name: ${{ github.event.repository.name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
-        run: |
-          make release
