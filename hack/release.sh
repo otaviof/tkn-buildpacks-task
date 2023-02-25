@@ -42,7 +42,10 @@ phase "Extrating chart name and version"
 
 readonly CHART_NAME="$(awk '/^name:/ { print $2 }' Chart.yaml)"
 readonly CHART_VERSION="$(awk '/^version:/ { print $2 }' Chart.yaml)"
-readonly CHART_TARBALL=".cr-release-packages/${CHART_NAME}-${CHART_VERSION}.tgz"
+
+# pre-defined location for the tarball to be packaged on the next step
+readonly CR_RELEASE_PKGS=".cr-release-packages"
+readonly CHART_TARBALL="${CR_RELEASE_PKGS}/${CHART_NAME}-${CHART_VERSION}.tgz"
 
 [[ -z "${CHART_NAME}" ]] && \
 	fail "CHART_NAME can't be otainted from Chart.yaml"
@@ -60,15 +63,26 @@ cr package
 [[ ! -f "${CHART_TARBALL}" ]] && \
 	fail "'${CHART_TARBALL}' is not found!"
 
+# creating a single file YAML payload with the task, it will be uploaded to the release page, side by
+# side with the chart tarball
+readonly TASK_PAYLOAD_FILE="${CR_RELEASE_PKGS}/${CHART_NAME}-${CHART_TARBALL}.yaml"
+phase "Rendering template on a single resource file ('${TASK_PAYLOAD_FILE}')"
+helm template ${CHART_NAME} . >${TASK_PAYLOAD_FILE}
+
 # showing the contents of the tarball, here it's important to check if there are cluttering that
 # should be added to the `.helmignore`
 phase "Package contents '${CHART_TARBALL}'"
 tar -ztvpf ${CHART_TARBALL}
 
+readonly ACTOR_REPOSITORY="${GITHUB_ACTOR}/${GITHUB_REPOSITORY_NAME}"
+
 # uploading the chart release using it's version as the release name
-phase "Uploading chart to '${GITHUB_ACTOR}/${GITHUB_REPOSITORY_NAME}' ($CHART_VERSION)"
+phase "Uploading chart '${CHART_TARBALL}' to '${ACTOR_REPOSITORY}' ($CHART_VERSION)"
 cr upload \
 	--owner=${GITHUB_ACTOR} \
 	--git-repo=${GITHUB_REPOSITORY_NAME} \
 	--token=${GITHUB_TOKEN} \
 	--release-name-template='{{ .Version }}'
+
+phase "Uploading task to '${ACTOR_REPOSITORY}' ($CHART_VERSION)"
+gh release upload --clobber "${GITHUB_REF_NAME}" ${TASK_PAYLOAD_FILE}
