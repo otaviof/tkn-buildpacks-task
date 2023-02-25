@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 #
 # Uses the `helm/chart-releaser` (cr) to package and relase the local chart, the artifact version
-# must be the same than the current repository tag. This script packages and upload the data to
-# GitHub.
+# must be the same than the current repository tag. The script renders the Task resource in a single
+# file to become part of the release artifacts.
+#
+# This script packages and upload the data to GitHub using `cr` and `gh` (installed by default on
+# GitHub Actions runtime).
 #
 
 shopt -s inherit_errexit
@@ -17,8 +20,12 @@ phase "Loading configuration from environment variables"
 # branch or tag triggering the workflow, for the release purposes it must be the same than the chart
 # version, thus a repository tag
 readonly GITHUB_REF_NAME="${GITHUB_REF_NAME:-}"
+
+# github username (actor) and token
 readonly GITHUB_ACTOR="${GITHUB_ACTOR:-}"
 readonly GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+
+# the repository name without the user/organization
 readonly GITHUB_REPOSITORY_NAME="${GITHUB_REPOSITORY_NAME:-}"
 
 [[ -z "${GITHUB_REF_NAME}" ]] && \
@@ -40,12 +47,9 @@ phase "Extrating chart name and version"
 [[ ! -f "Chart.yaml" ]] && \
 	fail "Chart.yaml is not found on '${PWD}'"
 
+# estracting name and version from the Chart.yaml file directly
 readonly CHART_NAME="$(awk '/^name:/ { print $2 }' Chart.yaml)"
 readonly CHART_VERSION="$(awk '/^version:/ { print $2 }' Chart.yaml)"
-
-# pre-defined location for the tarball to be packaged on the next step
-readonly CR_RELEASE_PKGS=".cr-release-packages"
-readonly CHART_TARBALL="${CR_RELEASE_PKGS}/${CHART_NAME}-${CHART_VERSION}.tgz"
 
 [[ -z "${CHART_NAME}" ]] && \
 	fail "CHART_NAME can't be otainted from Chart.yaml"
@@ -56,8 +60,16 @@ readonly CHART_TARBALL="${CR_RELEASE_PKGS}/${CHART_NAME}-${CHART_VERSION}.tgz"
 [[ "${GITHUB_REF_NAME}" != "${CHART_VERSION}" ]] && \
 	fail "Git tag '${GITHUB_REF_NAME}' and chart version '${CHART_VERSION}' must be the same!"
 
+#
+# Packaging Chart and Rendering Task
+#
+
+# pre-defined location for the tarball to be packaged on the next step
+readonly CR_RELEASE_PKGS=".cr-release-packages"
+readonly CHART_TARBALL="${CR_RELEASE_PKGS}/${CHART_NAME}-${CHART_VERSION}.tgz"
+
 # creating a tarball out of the chart, ignoring files based on the `.helmignore`
-phase "Packaing chart '${CHART_NAME}-${CHART_VERSION}'"
+phase "Packaging chart '${CHART_NAME}-${CHART_VERSION}'"
 cr package
 
 [[ ! -f "${CHART_TARBALL}" ]] && \
@@ -74,15 +86,20 @@ readonly TASK_PAYLOAD_FILE="${CR_RELEASE_PKGS}/${CHART_NAME}-${CHART_VERSION}.ya
 phase "Rendering template on a single Task file ('${TASK_PAYLOAD_FILE}')"
 helm template ${CHART_NAME} . >${TASK_PAYLOAD_FILE}
 
+#
+# Release Upload
+#
+
 readonly ACTOR_REPOSITORY="${GITHUB_ACTOR}/${GITHUB_REPOSITORY_NAME}"
 
 # uploading the chart release using it's version as the release name
 phase "Uploading chart '${CHART_TARBALL}' to '${ACTOR_REPOSITORY}' ($CHART_VERSION)"
 cr upload \
-	--owner=${GITHUB_ACTOR} \
-	--git-repo=${GITHUB_REPOSITORY_NAME} \
-	--token=${GITHUB_TOKEN} \
+	--owner="${GITHUB_ACTOR}" \
+	--git-repo="${GITHUB_REPOSITORY_NAME}" \
+	--token="${GITHUB_TOKEN}" \
 	--release-name-template='{{ .Version }}'
 
-phase "Uploading task to '${ACTOR_REPOSITORY}' ($CHART_VERSION)"
+# uploading the task file to the same release
+phase "Uploading task '${TASK_PAYLOAD_FILE}' to '${ACTOR_REPOSITORY}' ($CHART_VERSION)"
 gh release upload --clobber "${GITHUB_REF_NAME}" ${TASK_PAYLOAD_FILE}
