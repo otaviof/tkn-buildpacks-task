@@ -16,7 +16,11 @@ jobs:
           fetch-depth: 0
 
       - shell: bash
-        run: make install-chart-releaser
+        run: |
+          make install-chart-releaser
 
       - shell: bash
-        run: make release
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          make release
