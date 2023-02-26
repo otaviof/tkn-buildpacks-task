@@ -1,0 +1,6 @@
+[build]
+
+[image]
+  tags = ["registry.local/namespace/project:latest"]
+  digest = "sha256:digest"
+  manifest-size = 2697

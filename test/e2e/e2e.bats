@@ -48,7 +48,10 @@ source ./test/helper/helper.sh
 
 	readonly TMPL_FILE="${BASE_DIR}/go-template.tpl"
 
-	# go-template to select the expected condition showing the PipelineRun final status
+	#
+	# Asserting PipelineRun Status
+	#
+
 	cat >${TMPL_FILE} <<EOS
 {{- range .status.conditions -}}
 	{{- if and (eq .type "Succeeded") (eq .status "True") }}
@@ -58,7 +61,26 @@ source ./test/helper/helper.sh
 EOS
 
 	# using template to select the requered information and asserting all tasks have been executed
+	# without failed or skipped steps
 	run tkn pipelinerun describe --output=go-template-file --template=${TMPL_FILE}
 	assert_success
 	assert_output --partial '(Failed: 0, Cancelled 0), Skipped: 0'
+
+	#
+	# Asserting Results
+	#
+
+	cat >${TMPL_FILE} <<EOS
+{{- range .status.taskRuns -}}
+  {{- range .status.taskResults -}}
+    {{ printf "%s=%s\n" .name .value }}
+  {{- end -}}
+{{- end -}}
+EOS
+
+	# using a template to select the interesting task-results printing out the attributes as
+	# key/value pairs split by new-line
+	run tkn pipelinerun describe --output=go-template-file --template=${TMPL_FILE}
+	assert_success
+	assert_output --regexp $'^APP_IMAGE_DIGEST=\S+\nAPP_IMAGE_URL=\S+.*'
 }
