@@ -7,7 +7,9 @@ metadata:
   labels:
     app.kubernetes.io/version: {{ .Chart.Version }}
   annotations:
-{{- toYaml .Values.annotations | nindent 4 }}
+{{- if .Values.annotations }}
+  {{- .Values.annotations | toYaml | nindent 4 }}
+{{- end }}
 spec:
   description: {{ .Chart.Description }}
 
@@ -71,6 +73,10 @@ spec:
     env:
       - name: CNB_PLATFORM_API
         value: "0.11"
+{{- if .Values.resources }}
+    resources:
+  {{- .Values.resources | toYaml | nindent 6 }}
+{{- end }}
 
   steps:
     # load all the shell scripts into the "/script" directory, a simple file creation followed by
@@ -92,14 +98,14 @@ spec:
     # extra enviroment variables are stored on the /platform/env following buildpacks convention
     - name: prepare
       image: {{ .Values.images.bash }}
+      command:
+        - /scripts/prepare.sh
       args:
         - "--env-vars"
         - "$(params.ENV_VARS[*])"
       # the enviroment variables required by the script are based on template
       env:
 {{- include "environment-variables" . | nindent 8 }}
-      command:
-        - /scripts/prepare.sh
       volumeMounts:
         - name: scripts-dir
           mountPath: /scripts
@@ -136,5 +142,24 @@ spec:
           mountPath: /layers
         - name: $(params.PLATFORM_DIR)
           mountPath: /platform
+{{- if .Values.securityContext }}
       securityContext:
-{{- .Values.securityContext | toYaml | nindent 8 }}
+  {{- .Values.securityContext | toYaml | nindent 8 }}
+{{- end }}
+
+    # inspect and extract the lifecycle results stored on `/layers/report.toml`, the script looks for
+    # the new image digest and URL (fully qualified image name)
+    - name: report
+      image: {{ .Values.images.bash }}
+      command:
+        - /scripts/report.sh
+      env:
+        - name: RESULTS_APP_IMAGE_DIGEST_PATH
+          value: $(results.APP_IMAGE_DIGEST.path)
+        - name: RESULTS_APP_IMAGE_URL_PATH
+          value: $(results.APP_IMAGE_URL.path)
+      volumeMounts:
+        - name: scripts-dir
+          mountPath: /scripts
+        - name: layers-dir
+          mountPath: /layers
