@@ -12,6 +12,7 @@
           "workspaces.cache.bound"
           "workspaces.cache.path"
           "workspaces.source.path"
+          "workspaces.bindings.path"
           "params.USER_ID"
           "params.GROUP_ID" }}
 - name: {{ . | upper | replace "." "_" | quote }}

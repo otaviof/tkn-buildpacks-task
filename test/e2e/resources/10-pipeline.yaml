@@ -23,6 +23,7 @@ spec:
   workspaces:
     - name: source
     - name: cache
+    - name: bindings
 
   tasks:
     - name: git-clone
@@ -49,6 +50,8 @@ spec:
           workspace: source
         - name: cache
           workspace: cache
+        - name: bindings
+          workspace: bindings
       params:
         - name: APP_IMAGE
           value: $(params.image-tag)

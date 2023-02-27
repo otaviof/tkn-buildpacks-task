@@ -19,6 +19,9 @@ spec:
     - name: cache
       description: Directory where cache is stored (when no cache image is provided).
       optional: true
+    - name: bindings
+      description: Extra PEM certificate file(s) ('*.pem')to create extra bindings.
+      optional: true
 
   params:
     - name: APP_IMAGE
@@ -68,11 +71,15 @@ spec:
       emptyDir: {}
     - name: layers-dir
       emptyDir: {}
+    - name: bindings-dir
+      emptyDir: {}
 
   stepTemplate:
     env:
       - name: CNB_PLATFORM_API
         value: "0.11"
+      - name: SERVICE_BINDING_ROOT
+        value: /bindings
 {{- if .Values.resources }}
     resources:
   {{- .Values.resources | toYaml | nindent 6 }}
@@ -113,6 +120,8 @@ spec:
           mountPath: /layers
         - name: $(params.PLATFORM_DIR)
           mountPath: /platform
+        - name: bindings-dir
+          mountPath: /bindings
 
     # runs the primary entrypoint for the task, invokes the "creator" CNB entrypoint to perform the
     # whole lifecycle steps in order to build a new container image
@@ -142,6 +151,8 @@ spec:
           mountPath: /layers
         - name: $(params.PLATFORM_DIR)
           mountPath: /platform
+        - name: bindings-dir
+          mountPath: /bindings
 {{- if .Values.securityContext }}
       securityContext:
   {{- .Values.securityContext | toYaml | nindent 8 }}

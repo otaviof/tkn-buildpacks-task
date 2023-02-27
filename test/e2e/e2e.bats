@@ -37,12 +37,22 @@ source ./test/helper/helper.sh
 # spinning up a PipeineRun using the internal Container-Registry to store the final image, when the
 # process is completed the resource is inspected to assert wether sucessful
 @test "[e2e] start pipeline and follow logging output" {
+	readonly PARAM_GIT_REPO="${PARAM_GIT_REPO:-}"
+	readonly PARAM_GIT_REVISION="${PARAM_GIT_REVISION:-}"
+	readonly PARAM_IMAGE_TAG="${PARAM_IMAGE_TAG:-}"
+
+	# asserting all required configuratio is informed
+	[ -n "${PARAM_GIT_REPO}" ]
+	[ -n "${PARAM_GIT_REVISION}" ]
+	[ -n "${PARAM_IMAGE_TAG}" ]
+
 	run tkn pipeline start tkn-buildpacks \
-		--param="git-repo=https://github.com/otaviof/nodejs-ex.git" \
-		--param="git-revision=main" \
-		--param="image-tag=registry.registry.svc.cluster.local:32222/otaviof/nodejs-ex:latest" \
+		--param="git-repo=${PARAM_GIT_REPO}" \
+		--param="git-revision=${PARAM_GIT_REVISION}" \
+		--param="image-tag=${PARAM_IMAGE_TAG}" \
 		--workspace="name=source,claimName=workspace-source,subPath=source" \
 		--workspace="name=cache,claimName=workspace-source,subPath=cache" \
+		--workspace="name=bindings,emptyDir=" \
 		--showlog >&3
 	assert_success
 

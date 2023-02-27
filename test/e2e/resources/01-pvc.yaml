@@ -11,5 +11,3 @@ spec:
   resources:
     requests:
       storage: 250Mi
-  # using the existing storage class in KinD, the "standard" is managed by the rancher provisioner
-  storageClassName: standard
