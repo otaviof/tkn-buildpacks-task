@@ -14,9 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: azure/setup-helm@v3
-
-      - uses: otaviof/task-release@main
+      - uses: otaviof/release-tekton-task@main
         with:
           repository_name: ${{ github.event.repository.name }}
         env:
