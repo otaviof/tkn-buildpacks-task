@@ -1,11 +1,11 @@
+/.cr-*
 /.DS_Store
 /.git*
-/.helmignore
 /.idea/
 /.project
 /.vscode/
 /*.md
 /*.tgz
-/.cr-*
+/LICENSE
 /Makefile
 /test/
