@@ -2,11 +2,11 @@
 
 source ./test/helper/helper.sh
 
-REPORT_SH="./scripts/report.sh"
+report_sh="./scripts/report.sh"
 
 # asserting the script will error out when the environment is not complete
 @test "[report.sh] should fail when the enviroment is incomplete" {
-	run ${REPORT_SH}
+	run ${report_sh}
 	assert_failure
 	assert_output --partial 'is not'
 }
@@ -18,7 +18,7 @@ REPORT_SH="./scripts/report.sh"
 	export RESULTS_APP_IMAGE_DIGEST_PATH="${BASE_DIR}/image-digest.txt"
 	export RESULTS_APP_IMAGE_URL_PATH="${BASE_DIR}/image-url.txt"
 
-	run ${REPORT_SH}
+	run ${report_sh}
 	assert_success
 
 	# making sure the result files tekton will read from are written and contain what's expected

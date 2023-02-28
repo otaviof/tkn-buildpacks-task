@@ -20,11 +20,10 @@ WORKSPACES_CACHE_PATH="${WORKSPACES_CACHE_PATH:-}"
 WORKSPACES_BINDINGS_PATH="${WORKSPACES_BINDINGS_PATH:-}"
 SERVICE_BINDING_ROOT=${SERVICE_BINDING_ROOT:-}
 
-[[ -z "${WORKSPACES_SOURCE_PATH}" ]] &&
-    fail "'WORKSPACES_SOURCE_PATH' environment variable is not set!"
-
-[[ -z "${SERVICE_BINDING_ROOT}" ]] &&
-    fail "'SERVICE_BINDING_ROOT' environment variable is not set!"
+for v in WORKSPACES_SOURCE_PATH SERVICE_BINDING_ROOT; do
+    [[ -z "${!v}" ]] &&
+        fail "'${v}' environment variable is not set!"
+done
 
 # making sure the directory paths needed in this script start on the base directory (BASE_DIR),
 # therefore we can simulate the script enviroment
@@ -44,11 +43,11 @@ readonly WORKSPACES_BINDINGS_PATH
 readonly WORKSPACES_CACHE_BOUND=${WORKSPACES_CACHE_BOUND:-false}
 
 # tekton home directory, by convention
-readonly TEKTON_HOME="${BASE_DIR}/tekton/home"
+readonly tekton_home="${BASE_DIR}/tekton/home"
 # buildpacks platform environment directory
-readonly ENV_DIR="${BASE_DIR}/platform/env"
+readonly env_dir="${BASE_DIR}/platform/env"
 # buildapcks layers directory, where the buildpacks components are stored and assembled
-readonly LAYERS_DIR="${BASE_DIR}/layers"
+readonly layers_dir="${BASE_DIR}/layers"
 
 #
 # Filesystem Permissions
@@ -61,15 +60,15 @@ if [ "${WORKSPACES_CACHE_BOUND}" == "true" ]; then
     chown -R "${PARAMS_USER_ID}:${PARAMS_GROUP_ID}" "${WORKSPACES_CACHE_PATH}"
 fi
 
-for DIR in "${TEKTON_HOME}" \
-    "${LAYERS_DIR}" \
+for d in "${tekton_home}" \
+    "${layers_dir}" \
     "${WORKSPACES_SOURCE_PATH}" \
     "${WORKSPACES_CACHE_PATH}"; do
     # skipping optional workspaces (and directories), the directory name is empty
-    [[ -z "${DIR}" ]] && continue
+    [[ -z "${d}" ]] && continue
 
-    phase "Setting permissions on '${DIR}' ('${PARAMS_USER_ID}:${PARAMS_GROUP_ID}')"
-    chown -R "${PARAMS_USER_ID}:${PARAMS_GROUP_ID}" "${DIR}"
+    phase "Setting permissions on '${d}' ('${PARAMS_USER_ID}:${PARAMS_GROUP_ID}')"
+    chown -R "${PARAMS_USER_ID}:${PARAMS_GROUP_ID}" "${d}"
 done
 
 chmod 775 "${WORKSPACES_SOURCE_PATH}"
@@ -80,30 +79,30 @@ chmod 775 "${WORKSPACES_SOURCE_PATH}"
 
 phase "Parsing additional configuration (--env-vars)"
 
-PARSING_FLAG=""
-ENVS=()
+parsing_flag=""
+environment_variables=()
 
-for ARG in ${@}; do
-    if [ "${ARG}" == "--env-vars" ]; then
+for arg in ${@}; do
+    if [ "${arg}" == "--env-vars" ]; then
         phase "Parsing environment variables"
-        PARSING_FLAG="env-vars"
-    elif [ "${PARSING_FLAG}" == "env-vars" ]; then
-        ENVS+=("${ARG}")
+        parsing_flag="env-vars"
+    elif [ "${parsing_flag}" == "env-vars" ]; then
+        environment_variables+=("${arg}")
     fi
 done
 
 phase "Processing environment variables"
 
-phase "Creating 'env' directory at '${ENV_DIR}'"
-[[ ! -d "${ENV_DIR}" ]] &&
-    mkdir -pv "${ENV_DIR}"
+phase "Creating 'env' directory at '${env_dir}'"
+[[ ! -d "${env_dir}" ]] &&
+    mkdir -pv "${env_dir}"
 
-for KV in "${ENVS[@]}"; do
-    IFS='=' read -r KEY VALUE <<<"${KV}"
-    if [[ -n "${KEY}" && -n "${VALUE}" ]]; then
-        FILE_PATH="${ENV_DIR}/${KEY}"
-        phase "Writing environment file '${FILE_PATH}'"
-        echo -n "${VALUE}" >"${FILE_PATH}"
+for kv in "${environment_variables[@]}"; do
+    IFS='=' read -r key value <<<"${kv}"
+    if [[ -n "${key}" && -n "${value}" ]]; then
+        file_path="${env_dir}/${key}"
+        phase "Writing environment file '${file_path}'"
+        echo -n "${value}" >"${file_path}"
     fi
 done
 
@@ -115,7 +114,7 @@ phase "Preparing buildpacks bindings '${SERVICE_BINDING_ROOT}'"
 [[ ! -d "${SERVICE_BINDING_ROOT}" ]] &&
     mkdir -pv "${SERVICE_BINDING_ROOT}"
 
-for F in $(find ${WORKSPACES_BINDINGS_PATH} -name "*.pem"); do
-    phase "Copying PEM file '${F}' into '${SERVICE_BINDING_ROOT}'"
-    cp -v ${F} ${SERVICE_BINDING_ROOT}
+for f in $(find ${WORKSPACES_BINDINGS_PATH} -name "*.pem"); do
+    phase "Copying PEM file '${f}' into '${SERVICE_BINDING_ROOT}'"
+    cp -v ${f} ${SERVICE_BINDING_ROOT}
 done

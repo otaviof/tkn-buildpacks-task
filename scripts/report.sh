@@ -21,11 +21,10 @@ phase "Making sure report file exists '${REPORT_TOML_PATH}'"
 readonly RESULTS_APP_IMAGE_DIGEST_PATH="${RESULTS_APP_IMAGE_DIGEST_PATH:-}"
 readonly RESULTS_APP_IMAGE_URL_PATH="${RESULTS_APP_IMAGE_URL_PATH:-}"
 
-[[ -z "${RESULTS_APP_IMAGE_DIGEST_PATH}" ]] &&
-	fail "'RESULTS_APP_IMAGE_DIGEST_PATH' enviroment variable is not set!"
-
-[[ -z "${RESULTS_APP_IMAGE_URL_PATH}" ]] &&
-	fail "'RESULTS_APP_IMAGE_URL_PATH' enviroment variable is not set!"
+for v in RESULTS_APP_IMAGE_DIGEST_PATH RESULTS_APP_IMAGE_URL_PATH; do
+    [[ -z "${!v}" ]] &&
+        fail "'${v}' environment variable is not set!"
+done
 
 #
 # Extracting Image Details
@@ -33,11 +32,11 @@ readonly RESULTS_APP_IMAGE_URL_PATH="${RESULTS_APP_IMAGE_URL_PATH:-}"
 
 phase "Extracting result image digest and URL"
 
-readonly DIGEST="$(awk -F '"' '/digest/ { print $2 }' ${REPORT_TOML_PATH})"
-readonly IMAGE_TAG="$(awk -F '"' '/tags/ { print $2 }' ${REPORT_TOML_PATH})"
+readonly digest="$(awk -F '"' '/digest/ { print $2 }' ${REPORT_TOML_PATH})"
+readonly image_tag="$(awk -F '"' '/tags/ { print $2 }' ${REPORT_TOML_PATH})"
 
-phase "Writing image digest '${DIGEST}' to '${RESULTS_APP_IMAGE_DIGEST_PATH}"
-printf "%s" "${DIGEST}" >${RESULTS_APP_IMAGE_DIGEST_PATH}
+phase "Writing image digest '${digest}' to '${RESULTS_APP_IMAGE_DIGEST_PATH}'"
+printf "%s" "${digest}" >${RESULTS_APP_IMAGE_DIGEST_PATH}
 
-phase "Writing image URL '${IMAGE_TAG}' to '${RESULTS_APP_IMAGE_URL_PATH}'"
-printf "%s" "${IMAGE_TAG}" >${RESULTS_APP_IMAGE_URL_PATH}
+phase "Writing image URL '${image_tag}' to '${RESULTS_APP_IMAGE_URL_PATH}'"
+printf "%s" "${image_tag}" >${RESULTS_APP_IMAGE_URL_PATH}

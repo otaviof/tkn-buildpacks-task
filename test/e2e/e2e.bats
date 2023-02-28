@@ -4,25 +4,25 @@ source ./test/helper/helper.sh
 
 # installing the buildpacks and git-clone
 @test "[e2e] installing git-clone and buildpacks tasks" {
-	readonly GITHUB_HOSTNME="raw.githubusercontent.com"
+	readonly github_hostnme="raw.githubusercontent.com"
 
-	readonly GIT_CLONE_PATH="tektoncd/catalog/main/task/git-clone"
-	readonly GIT_CLONE_VERSION="0.9"
-	readonly GIT_CLONE_URL="https://${GITHUB_HOSTNME}/${GIT_CLONE_PATH}/${GIT_CLONE_VERSION}/git-clone.yaml"
+	readonly git_clone_path="tektoncd/catalog/main/task/git-clone"
+	readonly git_clone_version="0.9"
+	readonly git_clone_url="https://${github_hostnme}/${git_clone_path}/${git_clone_version}/git-clone.yaml"
 
 	# installing the git-clone task, employed to clone the sample repository
-	run kubectl apply -f ${GIT_CLONE_URL}
+	run kubectl apply -f ${git_clone_url}
 	assert_success
 
 	# rendering the task and storing in a variable to assess the payload
-	BUILDPACKS_TASK_FILE="${BASE_DIR}/task.yaml"
-	BUILDPACKS_TASK=$(helm template .)
-	[ -n "${BUILDPACKS_TASK}" ]
+	buildpacks_task_file="${BASE_DIR}/task.yaml"
+	buildpacks_task=$(helm template .)
+	[ -n "${buildpacks_task}" ]
 
 	# saving the task payload in a temporary file
-	echo -ne "${BUILDPACKS_TASK}" >${BUILDPACKS_TASK_FILE}
+	echo -ne "${buildpacks_task}" >${buildpacks_task_file}
 
-	run kubectl apply -f ${BUILDPACKS_TASK_FILE}
+	run kubectl apply -f ${buildpacks_task_file}
 	assert_success
 }
 
@@ -56,13 +56,13 @@ source ./test/helper/helper.sh
 		--showlog >&3
 	assert_success
 
-	readonly TMPL_FILE="${BASE_DIR}/go-template.tpl"
+	readonly tmpl_file="${BASE_DIR}/go-template.tpl"
 
 	#
 	# Asserting PipelineRun Status
 	#
 
-	cat >${TMPL_FILE} <<EOS
+	cat >${tmpl_file} <<EOS
 {{- range .status.conditions -}}
 	{{- if and (eq .type "Succeeded") (eq .status "True") }}
 		{{ .message }}
@@ -72,7 +72,7 @@ EOS
 
 	# using template to select the requered information and asserting all tasks have been executed
 	# without failed or skipped steps
-	run tkn pipelinerun describe --output=go-template-file --template=${TMPL_FILE}
+	run tkn pipelinerun describe --output=go-template-file --template=${tmpl_file}
 	assert_success
 	assert_output --partial '(Failed: 0, Cancelled 0), Skipped: 0'
 
@@ -80,7 +80,7 @@ EOS
 	# Asserting Results
 	#
 
-	cat >${TMPL_FILE} <<EOS
+	cat >${tmpl_file} <<EOS
 {{- range .status.taskRuns -}}
   {{- range .status.taskResults -}}
     {{ printf "%s=%s\n" .name .value }}
@@ -90,7 +90,7 @@ EOS
 
 	# using a template to select the interesting task-results printing out the attributes as
 	# key/value pairs split by new-line
-	run tkn pipelinerun describe --output=go-template-file --template=${TMPL_FILE}
+	run tkn pipelinerun describe --output=go-template-file --template=${tmpl_file}
 	assert_success
 	assert_output --regexp $'^APP_IMAGE_DIGEST=\S+\nAPP_IMAGE_URL=\S+.*'
 }

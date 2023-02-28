@@ -7,7 +7,7 @@ export PARAMS_USER_ID="$(id -u)"
 export SERVICE_BINDING_ROOT="/bindings"
 export WORKSPACES_SOURCE_PATH="/workspace/source"
 
-PREPARE_SH="./scripts/prepare.sh"
+prepare_sh="./scripts/prepare.sh"
 
 # when there's no configuration, or the configuration is incomplete, the script must return error,
 # this way we can assert it will run with all required configuration
@@ -15,7 +15,7 @@ PREPARE_SH="./scripts/prepare.sh"
 	unset WORKSPACES_SOURCE_PATH
 	unset SERVICE_BINDING_ROOT
 
-	run ${PREPARE_SH}
+	run ${prepare_sh}
 	assert_failure
 	assert_output --partial 'not set'
 }
@@ -28,7 +28,7 @@ PREPARE_SH="./scripts/prepare.sh"
 		"${BASE_DIR}/layers" \
 		"${BASE_DIR}/${WORKSPACES_SOURCE_PATH}"
 
-	run ${PREPARE_SH}
+	run ${prepare_sh}
 	assert_success
 }
 
@@ -44,7 +44,7 @@ PREPARE_SH="./scripts/prepare.sh"
 		"${BASE_DIR}/${WORKSPACES_SOURCE_PATH}" \
 		"${BASE_DIR}/${WORKSPACES_CACHE_PATH}"
 
-	run ${PREPARE_SH}
+	run ${prepare_sh}
 	assert_success
 }
 
@@ -71,19 +71,19 @@ PREPARE_SH="./scripts/prepare.sh"
 
 	# running the prepare script informing a enviroment variables (env-vars) parameter, the script
 	# should run successfuly which means every command executed returns exit-code zero
-	run ${PREPARE_SH} --env-vars "key=value" "k=v"
+	run ${prepare_sh} --env-vars "key=value" "k=v"
 	assert_success
 
 	# making sure the --env-vars argument is working as intended, as in creating a new file with the
 	# key value pair, buildpacks CNB will pick up those and set in the builder's environment
-	PLATFORM_ENV_FILE_1="${BASE_DIR}/platform/env/key"
-	PLATFORM_ENV_FILE_2="${BASE_DIR}/platform/env/k"
+	platform_env_file_1="${BASE_DIR}/platform/env/key"
+	platform_env_file_2="${BASE_DIR}/platform/env/k"
 
-	assert_file_exists ${PLATFORM_ENV_FILE_1}
-	assert_file_contains ${PLATFORM_ENV_FILE_1} '^value$'
+	assert_file_exists ${platform_env_file_1}
+	assert_file_contains ${platform_env_file_1} '^value$'
 
-	assert_file_exists ${PLATFORM_ENV_FILE_2}
-	assert_file_contains ${PLATFORM_ENV_FILE_2} '^v$'
+	assert_file_exists ${platform_env_file_2}
+	assert_file_contains ${platform_env_file_2} '^v$'
 
 	# asserting the extra binding files are copied into the expected location
 	assert_file_exists "${BASE_DIR}/bindings/cert.pem"
