@@ -34,18 +34,19 @@ test-e2e:
 helm-template:
 	helm template $(ARGS) $(PROJECT_NAME) .
 
-# packages the helm-chart as a single tarball, using it's name and version to compose the file
-helm-package:
-	helm package $(ARGS) .
-	tar ztvpf $(PROJECT_NAME)-*.tgz
-
 # renders and installs the task in the current namespace
 install:
 	helm template $(PROJECT_NAME) . |kubectl $(ARGS) apply -f -
 
-# removes the package helm chart, and also the temporary directories for the chart-releaser
+# packages the helm-chart as a single tarball, using it's name and version to compose the file
+helm-package:
+	rm -f $(PROJECT_NAME)-*.tgz || true
+	helm package $(ARGS) . && \
+		tar -ztvpf $(PROJECT_NAME)-*.tgz
+
+# removes the package helm chart, and also the chart-releaser temporary directories
 clean:
-	rm -rf $(PROJECT_NAME)-*.tgz .cr-* > /dev/null 2>&1 || true
+	rm -rf $(PROJECT_NAME)-*.tgz > /dev/null 2>&1 || true
 
 # act runs the github actions workflows, so by default only running the test workflow (integration
 # and end-to-end) to avoid running the release workflow accidently
